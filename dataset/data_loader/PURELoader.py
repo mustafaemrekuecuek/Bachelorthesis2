@@ -129,13 +129,20 @@ class PURELoader(BaseLoader):
 
     @staticmethod
     def read_video(video_file):
-        """Reads a video file, returns frames(T, H, W, 3) """
-        frames = list()
+        """Reads a video file, returns frames(T, H, W, 3)."""
+        frames = []
         all_png = sorted(glob.glob(video_file + '*.png'))
+
+        if not all_png:
+            raise ValueError(f"No PNG files found in: {video_file}")
+
         for png_path in all_png:
             img = cv2.imread(png_path)
+            if img is None:
+                raise ValueError(f"Could not read PNG file: {png_path}")
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             frames.append(img)
+
         return np.asarray(frames)
 
     @staticmethod
