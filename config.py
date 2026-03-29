@@ -156,6 +156,13 @@ _C.VALID.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_H = 9
 _C.VALID.DATA.PREPROCESS.IBVP = CN()
 _C.VALID.DATA.PREPROCESS.IBVP.DATA_MODE = 'RGB'
 
+"SELF-IMPLEMENTED"
+_C.VALID.DATA.PREPROCESS.USE_MSR = False
+_C.VALID.DATA.PREPROCESS.MSR = CN()
+_C.VALID.DATA.PREPROCESS.MSR.SCALES = [15, 80, 250]
+_C.VALID.DATA.PREPROCESS.MSR.GAIN = 1.0
+_C.VALID.DATA.PREPROCESS.MSR.OFFSET = 0.0
+
 # -----------------------------------------------------------------------------
 # Test settings
 # -----------------------------------------------------------------------------\
@@ -222,6 +229,13 @@ _C.TEST.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_W = 9
 _C.TEST.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_H = 9
 _C.TEST.DATA.PREPROCESS.IBVP = CN()
 _C.TEST.DATA.PREPROCESS.IBVP.DATA_MODE = 'RGB'
+
+"SELF-IMPLEMENTED"
+_C.TEST.DATA.PREPROCESS.USE_MSR = False
+_C.TEST.DATA.PREPROCESS.MSR = CN()
+_C.TEST.DATA.PREPROCESS.MSR.SCALES = [15, 80, 250]
+_C.TEST.DATA.PREPROCESS.MSR.GAIN = 1.0
+_C.TEST.DATA.PREPROCESS.MSR.OFFSET = 0.0
 # -----------------------------------------------------------------------------
 # Unsupervised method settings
 # -----------------------------------------------------------------------------\
@@ -295,6 +309,26 @@ _C.MODEL.MODEL_DIR = 'PreTrainedModels'
 # Specific parameters for physnet parameters
 _C.MODEL.PHYSNET = CN()
 _C.MODEL.PHYSNET.FRAME_NUM = 64
+
+"SELF-IMPLEMENTED"
+# -----------------------------------------------------------------------------
+# Model Settings for DeepPhys + TDCM
+# -----------------------------------------------------------------------------
+_C.MODEL.TDCM = CN()
+_C.MODEL.TDCM.ENABLE = False
+_C.MODEL.TDCM.CHANNELS = 128
+_C.MODEL.TDCM.DROPOUT = 0.1
+_C.MODEL.TDCM.KERNEL_SHORT = 3
+_C.MODEL.TDCM.KERNEL_MID = 5
+_C.MODEL.TDCM.KERNEL_LONG = 7
+_C.MODEL.TDCM.DILATION_MID = 2
+_C.MODEL.TDCM.DILATION_LONG = 3
+
+_C.TRAIN.DATA.PREPROCESS.USE_MSR = False
+_C.TRAIN.DATA.PREPROCESS.MSR = CN()
+_C.TRAIN.DATA.PREPROCESS.MSR.SCALES = [15, 80, 250]
+_C.TRAIN.DATA.PREPROCESS.MSR.GAIN = 1.0
+_C.TRAIN.DATA.PREPROCESS.MSR.OFFSET = 0.0
 
 # -----------------------------------------------------------------------------
 # Specific parameters for iBVPNet parameters

@@ -5,16 +5,16 @@ TRAIN:
   BATCH_SIZE: 2
   EPOCHS: 30
   LR: 1e-3
-  MODEL_FILE_NAME: PURE_PURE_UBFC_DeepPhys
+  MODEL_FILE_NAME: PURE_PURE_UBFC_DeepPhys_MP
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 30
     DATASET: PURE
-    DO_PREPROCESS: False
+    DO_PREPROCESS: True
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/PURE"
-    CACHED_PATH: "./cache/pure"
-    FILE_LIST_PATH: "./data/file_lists/pure"
+    CACHED_PATH: "./cache/pure_mp"
+    FILE_LIST_PATH: "./data/file_lists/pure_mp"
     EXP_DATA_NAME: ""
     BEGIN: 0.0
     END: 0.8
@@ -26,7 +26,7 @@ TRAIN:
       CHUNK_LENGTH: 180
       CROP_FACE:
         DO_CROP_FACE: True
-        BACKEND: 'HC'
+        BACKEND: 'MP'
         USE_LARGE_FACE_BOX: True
         LARGE_BOX_COEF: 1.5
         DETECTION:
@@ -41,11 +41,11 @@ VALID:
   DATA:
     FS: 30
     DATASET: PURE
-    DO_PREPROCESS: False
+    DO_PREPROCESS: True
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/PURE"
-    CACHED_PATH: "./cache/pure"
-    FILE_LIST_PATH: "./data/file_lists/pure"
+    CACHED_PATH: "./cache/pure_mp"
+    FILE_LIST_PATH: "./data/file_lists/pure_mp"
     EXP_DATA_NAME: ""
     BEGIN: 0.8
     END: 1.0
@@ -57,7 +57,7 @@ VALID:
       CHUNK_LENGTH: 180
       CROP_FACE:
         DO_CROP_FACE: True
-        BACKEND: 'HC'
+        BACKEND: 'MP'
         USE_LARGE_FACE_BOX: True
         LARGE_BOX_COEF: 1.5
         DETECTION:
@@ -74,11 +74,11 @@ TEST:
   DATA:
     FS: 30
     DATASET: UBFC-rPPG
-    DO_PREPROCESS: False
+    DO_PREPROCESS: True
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/UBFC-rPPG"
-    CACHED_PATH: "./cache/ubfc_test_deepphys"
-    FILE_LIST_PATH: "./data/file_lists/ubfc_test_deepphys"
+    CACHED_PATH: "./cache/ubfc_test_deepphys_mp"
+    FILE_LIST_PATH: "./data/file_lists/ubfc_test_deepphys_mp"
     EXP_DATA_NAME: ""
     BEGIN: 0.0
     END: 1.0
@@ -90,7 +90,7 @@ TEST:
       CHUNK_LENGTH: 180
       CROP_FACE:
         DO_CROP_FACE: True
-        BACKEND: 'HC'
+        BACKEND: 'MP'
         USE_LARGE_FACE_BOX: True
         LARGE_BOX_COEF: 1.5
         DETECTION:
@@ -112,7 +112,7 @@ MODEL:
   NAME: DeepPhys
 
 INFERENCE:
-  BATCH_SIZE: 2
+  BATCH_SIZE: 2PURE_PURE_UBFC-rPPG_DEEPPHYS_Mediapipe.yaml
   EVALUATION_METHOD: "FFT"
   EVALUATION_WINDOW:
     USE_SMALLER_WINDOW: False

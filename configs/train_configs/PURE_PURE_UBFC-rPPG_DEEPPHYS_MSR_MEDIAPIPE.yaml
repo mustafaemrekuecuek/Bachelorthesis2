@@ -5,7 +5,7 @@ TRAIN:
   BATCH_SIZE: 2
   EPOCHS: 30
   LR: 1e-3
-  MODEL_FILE_NAME: PURE_PURE_UBFC_DeepPhys
+  MODEL_FILE_NAME: PURE_PURE_UBFC_DeepPhys_MSR_MP
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 30
@@ -13,12 +13,17 @@ TRAIN:
     DO_PREPROCESS: False
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/PURE"
-    CACHED_PATH: "./cache/pure"
-    FILE_LIST_PATH: "./data/file_lists/pure"
+    CACHED_PATH: "./cache/pure_msr_mp"
+    FILE_LIST_PATH: "./data/file_lists/pure_msr_mp"
     EXP_DATA_NAME: ""
     BEGIN: 0.0
     END: 0.8
     PREPROCESS:
+      USE_MSR: True
+      MSR:
+        SCALES: [15, 80, 250]
+        GAIN: 1.0
+        OFFSET: 0.0
       DATA_TYPE: ['DiffNormalized', 'Standardized']
       DATA_AUG: ['None']
       LABEL_TYPE: DiffNormalized
@@ -26,7 +31,7 @@ TRAIN:
       CHUNK_LENGTH: 180
       CROP_FACE:
         DO_CROP_FACE: True
-        BACKEND: 'HC'
+        BACKEND: 'MP'
         USE_LARGE_FACE_BOX: True
         LARGE_BOX_COEF: 1.5
         DETECTION:
@@ -44,12 +49,17 @@ VALID:
     DO_PREPROCESS: False
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/PURE"
-    CACHED_PATH: "./cache/pure"
-    FILE_LIST_PATH: "./data/file_lists/pure"
+    CACHED_PATH: "./cache/pure_msr_mp"
+    FILE_LIST_PATH: "./data/file_lists/pure_msr_mp"
     EXP_DATA_NAME: ""
     BEGIN: 0.8
     END: 1.0
     PREPROCESS:
+      USE_MSR: True
+      MSR:
+        SCALES: [15, 80, 250]
+        GAIN: 1.0
+        OFFSET: 0.0
       DATA_TYPE: ['DiffNormalized', 'Standardized']
       DATA_AUG: ['None']
       LABEL_TYPE: DiffNormalized
@@ -57,7 +67,7 @@ VALID:
       CHUNK_LENGTH: 180
       CROP_FACE:
         DO_CROP_FACE: True
-        BACKEND: 'HC'
+        BACKEND: 'MP'
         USE_LARGE_FACE_BOX: True
         LARGE_BOX_COEF: 1.5
         DETECTION:
@@ -74,15 +84,20 @@ TEST:
   DATA:
     FS: 30
     DATASET: UBFC-rPPG
-    DO_PREPROCESS: False
+    DO_PREPROCESS: True
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/UBFC-rPPG"
-    CACHED_PATH: "./cache/ubfc_test_deepphys"
-    FILE_LIST_PATH: "./data/file_lists/ubfc_test_deepphys"
+    CACHED_PATH: "./cache/ubfc_test_msr_mp"
+    FILE_LIST_PATH: "./data/file_lists/ubfc_test_msr_mp"
     EXP_DATA_NAME: ""
     BEGIN: 0.0
     END: 1.0
     PREPROCESS:
+      USE_MSR: True
+      MSR:
+        SCALES: [15, 80, 250]
+        GAIN: 1.0
+        OFFSET: 0.0
       DATA_TYPE: ['DiffNormalized', 'Standardized']
       DATA_AUG: ['None']
       LABEL_TYPE: DiffNormalized
@@ -90,7 +105,7 @@ TEST:
       CHUNK_LENGTH: 180
       CROP_FACE:
         DO_CROP_FACE: True
-        BACKEND: 'HC'
+        BACKEND: 'MP'
         USE_LARGE_FACE_BOX: True
         LARGE_BOX_COEF: 1.5
         DETECTION:
@@ -110,6 +125,15 @@ LOG:
 MODEL:
   DROP_RATE: 0.2
   NAME: DeepPhys
+  TDCM:
+    ENABLE: False
+    CHANNELS: 128
+    DROPOUT: 0.1
+    KERNEL_SHORT: 3
+    KERNEL_MID: 5
+    KERNEL_LONG: 7
+    DILATION_MID: 2
+    DILATION_LONG: 3
 
 INFERENCE:
   BATCH_SIZE: 2

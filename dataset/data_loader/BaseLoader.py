@@ -31,6 +31,7 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+
 class BaseLoader(Dataset):
     """The base class for data loading based on pytorch Dataset.
 
@@ -154,8 +155,8 @@ class BaseLoader(Dataset):
         elif np.issubdtype(frames.dtype, np.floating) and np.min(frames) >= 0.0 and np.max(frames) <= 1.0:
             processed_frames = [(np.round(frame * 255)).astype(np.uint8)[..., :3] for frame in frames]
         else:
-            raise Exception(f'Loaded frames are of an incorrect type or range of values! '\
-            + f'Received frames of type {frames.dtype} and range {np.min(frames)} to {np.max(frames)}.')
+            raise Exception(f'Loaded frames are of an incorrect type or range of values! ' \
+                            + f'Received frames of type {frames.dtype} and range {np.min(frames)} to {np.max(frames)}.')
         return np.asarray(processed_frames)
 
     def generate_pos_psuedo_labels(self, frames, fs=30):
@@ -199,12 +200,12 @@ class BaseLoader(Dataset):
         pos_bvp = signal.filtfilt(b, a, bvp.astype(np.double))
 
         # apply hilbert normalization to normalize PPG amplitude
-        analytic_signal = signal.hilbert(pos_bvp) 
-        amplitude_envelope = np.abs(analytic_signal) # derive envelope signal
-        env_norm_bvp = pos_bvp/amplitude_envelope # normalize by env
+        analytic_signal = signal.hilbert(pos_bvp)
+        amplitude_envelope = np.abs(analytic_signal)  # derive envelope signal
+        env_norm_bvp = pos_bvp / amplitude_envelope  # normalize by env
 
-        return np.array(env_norm_bvp) # return POS psuedo labels
-    
+        return np.array(env_norm_bvp)  # return POS psuedo labels
+
     def preprocess_dataset(self, data_dirs, config_preprocess, begin, end):
         """Parses and preprocesses all the raw data based on split.
 
@@ -216,23 +217,14 @@ class BaseLoader(Dataset):
         """
         data_dirs_split = self.split_raw_data(data_dirs, begin, end)  # partition dataset 
         # send data directories to be processed
-        file_list_dict = self.multi_process_manager(data_dirs_split, config_preprocess) 
+        file_list_dict = self.multi_process_manager(data_dirs_split, config_preprocess)
         self.build_file_list(file_list_dict)  # build file list
         self.load_preprocessed_data()  # load all data and corresponding labels (sorted for consistency)
         print("Total Number of raw files preprocessed:", len(data_dirs_split), end='\n\n')
 
     def preprocess(self, frames, bvps, config_preprocess):
-        """Preprocesses a pair of data.
-
-        Args:
-            frames(np.array): Frames in a video.
-            bvps(np.array): Blood volumne pulse (PPG) signal labels for a video.
-            config_preprocess(CfgNode): preprocessing settings(ref:config.py).
-        Returns:
-            frame_clips(np.array): processed video data by frames
-            bvps_clips(np.array): processed bvp (ppg) labels by frames
-        """
-        # resize frames and crop for face region
+        """Preprocesses a pair of data."""
+        # 1) Face crop + resize
         frames = self.crop_face_resize(
             frames,
             config_preprocess.CROP_FACE.DO_CROP_FACE,
@@ -243,20 +235,38 @@ class BaseLoader(Dataset):
             config_preprocess.CROP_FACE.DETECTION.DYNAMIC_DETECTION_FREQUENCY,
             config_preprocess.CROP_FACE.DETECTION.USE_MEDIAN_FACE_BOX,
             config_preprocess.RESIZE.W,
-            config_preprocess.RESIZE.H)
-        # Check data transformation type
-        data = list()  # Video data
+            config_preprocess.RESIZE.H
+        )
+
+        # 2) Original frames for motion branch
+        orig_frames = frames.astype(np.float32)
+
+        # 3) Optional MSR only for appearance branch
+        if hasattr(config_preprocess, "USE_MSR") and config_preprocess.USE_MSR:
+            appearance_frames = self.apply_msr_to_frames(
+                orig_frames.copy(),
+                scales=config_preprocess.MSR.SCALES,
+                gain=config_preprocess.MSR.GAIN,
+                offset=config_preprocess.MSR.OFFSET
+            )
+        else:
+            appearance_frames = orig_frames.copy()
+
+        # 4) Build DeepPhys input streams
+        data = []
         for data_type in config_preprocess.DATA_TYPE:
-            f_c = frames.copy()
             if data_type == "Raw":
-                data.append(f_c)
+                data.append(orig_frames.copy())
             elif data_type == "DiffNormalized":
-                data.append(BaseLoader.diff_normalize_data(f_c))
+                data.append(BaseLoader.diff_normalize_data(orig_frames.copy()))
             elif data_type == "Standardized":
-                data.append(BaseLoader.standardized_data(f_c))
+                data.append(BaseLoader.standardized_data(appearance_frames.copy()))
             else:
-                raise ValueError("Unsupported data type!")
-        data = np.concatenate(data, axis=-1)  # concatenate all channels
+                raise ValueError(f"Unsupported data type: {data_type}")
+
+        data = np.concatenate(data, axis=-1)
+
+        # 5) Label processing
         if config_preprocess.LABEL_TYPE == "Raw":
             pass
         elif config_preprocess.LABEL_TYPE == "DiffNormalized":
@@ -266,9 +276,9 @@ class BaseLoader(Dataset):
         else:
             raise ValueError("Unsupported label type!")
 
-        if config_preprocess.DO_CHUNK:  # chunk data into snippets
-            frames_clips, bvps_clips = self.chunk(
-                data, bvps, config_preprocess.CHUNK_LENGTH)
+        # 6) Chunking
+        if config_preprocess.DO_CHUNK:
+            frames_clips, bvps_clips = self.chunk(data, bvps, config_preprocess.CHUNK_LENGTH)
         else:
             frames_clips = np.array([data])
             bvps_clips = np.array([bvps])
@@ -290,7 +300,7 @@ class BaseLoader(Dataset):
             # Use OpenCV's Haar Cascade algorithm implementation for face detection
             # This should only utilize the CPU
             detector = cv2.CascadeClassifier(
-            './dataset/haarcascade_frontalface_default.xml')
+                './dataset/haarcascade_frontalface_default.xml')
 
             # Computed face_zone(s) are in the form [x_coord, y_coord, width, height]
             # (x,y) corresponds to the top-left corner of the zone to define using
@@ -307,7 +317,45 @@ class BaseLoader(Dataset):
                 face_box_coor = face_zone[max_width_index]
                 print("Warning: More than one faces are detected. Only cropping the biggest one.")
             else:
-                face_box_coor = face_zone[0]     
+                face_box_coor = face_zone[0]
+        elif backend == "MP":
+            import mediapipe as _mp
+            detector = self._get_mediapipe_face_detector()
+
+            rgb_frame = frame[:, :, :3].astype(np.uint8)
+            mp_image = _mp.Image(image_format=_mp.ImageFormat.SRGB, data=rgb_frame)
+            result = detector.detect(mp_image)
+
+            if result.detections:
+                h, w = frame.shape[:2]
+                best_box = None
+                best_area = -1
+
+                for detection in result.detections:
+                    bbox = detection.bounding_box
+                    x = bbox.origin_x
+                    y = bbox.origin_y
+                    width = bbox.width
+                    height = bbox.height
+
+                    area = width * height
+                    if area > best_area:
+                        best_area = area
+                        best_box = (x, y, width, height)
+
+                x, y, width, height = best_box
+                center_x = x + width // 2
+                center_y = y + height // 2
+                square_size = max(width, height)
+                new_x = max(0, center_x - square_size // 2)
+                new_y = max(0, center_y - square_size // 2)
+                square_size = min(square_size, w - new_x, h - new_y)
+
+                face_box_coor = [new_x, new_y, square_size, square_size]
+            else:
+                print("ERROR: No Face Detected (MediaPipe)")
+                face_box_coor = [0, 0, frame.shape[1], frame.shape[0]]
+
         elif "Y5F" in backend:
             # Use a YOLO5Face trained on WiderFace dataset
             # This utilizes both the CPU and GPU
@@ -336,6 +384,7 @@ class BaseLoader(Dataset):
                 new_y = center_y - (square_size // 2)
                 face_box_coor = [new_x, new_y, square_size, square_size]
 
+
             else:
                 print("ERROR: No Face Detected")
                 face_box_coor = [0, 0, frame.shape[0], frame.shape[1]]
@@ -349,7 +398,8 @@ class BaseLoader(Dataset):
             face_box_coor[3] = larger_box_coef * face_box_coor[3]
         return face_box_coor
 
-    def crop_face_resize(self, frames, use_face_detection, backend, use_larger_box, larger_box_coef, use_dynamic_detection, 
+    def crop_face_resize(self, frames, use_face_detection, backend, use_larger_box, larger_box_coef,
+                         use_dynamic_detection,
                          detection_freq, use_median_box, width, height):
         """Crop face and resize frames.
 
@@ -377,7 +427,8 @@ class BaseLoader(Dataset):
         # Perform face detection by num_dynamic_det" times.
         for idx in range(num_dynamic_det):
             if use_face_detection:
-                face_region_all.append(self.face_detection(frames[detection_freq * idx], backend, use_larger_box, larger_box_coef))
+                face_region_all.append(
+                    self.face_detection(frames[detection_freq * idx], backend, use_larger_box, larger_box_coef))
             else:
                 face_region_all.append([0, 0, frames.shape[1], frames.shape[2]])
         face_region_all = np.asarray(face_region_all, dtype='int')
@@ -401,7 +452,7 @@ class BaseLoader(Dataset):
                     face_region = face_region_all[reference_index]
                 frame = frame[max(face_region[1], 0):min(face_region[1] + face_region[3], frame.shape[0]),
                         max(face_region[0], 0):min(face_region[0] + face_region[2], frame.shape[1])]
-            resized_frames[i] = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
+            resized_frames[i] = cv2.resize(frame, (width, height), interpolation=cv2.INTER_CUBIC)
         return resized_frames
 
     def chunk(self, frames, bvps, chunk_length):
@@ -473,7 +524,7 @@ class BaseLoader(Dataset):
             count += 1
         return input_path_name_list, label_path_name_list
 
-    def multi_process_manager(self, data_dirs, config_preprocess, multi_process_quota=8):
+    def multi_process_manager(self, data_dirs, config_preprocess, multi_process_quota=1):
         """Allocate dataset preprocessing across multiple processes.
 
         Args:
@@ -500,8 +551,8 @@ class BaseLoader(Dataset):
             while process_flag:  # ensure that every i creates a process
                 if running_num < multi_process_quota:  # in case of too many processes
                     # send data to be preprocessing task
-                    p = mp.Process(target=self.preprocess_dataset_subprocess, 
-                                args=(data_dirs,config_preprocess, i, file_list_dict))
+                    p = mp.Process(target=self.preprocess_dataset_subprocess,
+                                   args=(data_dirs, config_preprocess, i, file_list_dict))
                     p.start()
                     p_list.append(p)
                     running_num += 1
@@ -643,3 +694,66 @@ class BaseLoader(Dataset):
             np.linspace(
                 1, input_signal.shape[0], target_length), np.linspace(
                 1, input_signal.shape[0], input_signal.shape[0]), input_signal)
+
+    "SELF-IMPLEMENTED"
+
+    @staticmethod
+    def single_scale_retinex(img, sigma):
+        img = img.astype(np.float32) + 1.0
+        blur = cv2.GaussianBlur(img, (0, 0), sigma)
+        blur = blur.astype(np.float32) + 1.0
+        retinex = np.log(img) - np.log(blur)
+        return retinex
+
+    @staticmethod
+    def multi_scale_retinex(img, scales):
+        retinex = np.zeros_like(img, dtype=np.float32)
+        for sigma in scales:
+            retinex += BaseLoader.single_scale_retinex(img, sigma)
+        retinex /= float(len(scales))
+        return retinex
+
+    @staticmethod
+    def apply_msr_to_frames(frames, scales=(15, 80, 250), gain=1.0, offset=0.0):
+        """
+        Apply Multi-Scale Retinex (MSR) to a sequence of frames.
+
+        Important for rPPG:
+        - no per-frame min-max normalization
+        - global normalization over the whole clip
+        - keep float32 output
+        """
+        frames = frames.astype(np.float32)
+        output = np.zeros_like(frames, dtype=np.float32)
+
+        for i in range(frames.shape[0]):
+            frame = frames[i] + 1.0
+            msr = BaseLoader.multi_scale_retinex(frame, scales)
+            msr = gain * msr + offset
+            output[i] = msr
+
+        out_min = np.min(output)
+        out_max = np.max(output)
+
+        if out_max - out_min > 1e-8:
+            output = (output - out_min) / (out_max - out_min)
+        else:
+            output = np.zeros_like(output, dtype=np.float32)
+
+        output = output * 255.0
+        output = np.nan_to_num(output, nan=0.0, posinf=255.0, neginf=0.0)
+
+        return output.astype(np.float32)
+
+    def _get_mediapipe_face_detector(self):
+        if not hasattr(self, "_mp_face_detector") or self._mp_face_detector is None:
+            import mediapipe as _mp
+            options = _mp.tasks.vision.FaceDetectorOptions(
+                base_options=_mp.tasks.BaseOptions(
+                    model_asset_path="blaze_face_short_range.tflite"
+                ),
+                running_mode=_mp.tasks.vision.RunningMode.IMAGE,
+                min_detection_confidence=0.5
+            )
+            self._mp_face_detector = _mp.tasks.vision.FaceDetector.create_from_options(options)
+        return self._mp_face_detector

@@ -35,3 +35,6 @@ neurokit2==0.2.7
 thop==0.1.1.post2209072238
 
 requests==2.32.3
+
+# Face Detection (MediaPipe)
+mediapipe

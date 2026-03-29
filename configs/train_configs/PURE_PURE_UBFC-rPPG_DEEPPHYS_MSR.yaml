@@ -5,20 +5,25 @@ TRAIN:
   BATCH_SIZE: 2
   EPOCHS: 30
   LR: 1e-3
-  MODEL_FILE_NAME: PURE_PURE_UBFC_DeepPhys
+  MODEL_FILE_NAME: PURE_PURE_UBFC_DeepPhys_MSR
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 30
     DATASET: PURE
-    DO_PREPROCESS: False
+    DO_PREPROCESS: True
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/PURE"
-    CACHED_PATH: "./cache/pure"
-    FILE_LIST_PATH: "./data/file_lists/pure"
+    CACHED_PATH: "./cache/pure_msr"
+    FILE_LIST_PATH: "./data/file_lists/pure_msr"
     EXP_DATA_NAME: ""
     BEGIN: 0.0
     END: 0.8
     PREPROCESS:
+      USE_MSR: True
+      MSR:
+        SCALES: [15, 80, 250]
+        GAIN: 1.0
+        OFFSET: 0.0
       DATA_TYPE: ['DiffNormalized', 'Standardized']
       DATA_AUG: ['None']
       LABEL_TYPE: DiffNormalized
@@ -41,15 +46,20 @@ VALID:
   DATA:
     FS: 30
     DATASET: PURE
-    DO_PREPROCESS: False
+    DO_PREPROCESS: True
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/PURE"
-    CACHED_PATH: "./cache/pure"
-    FILE_LIST_PATH: "./data/file_lists/pure"
+    CACHED_PATH: "./cache/pure_msr"
+    FILE_LIST_PATH: "./data/file_lists/pure_msr"
     EXP_DATA_NAME: ""
     BEGIN: 0.8
     END: 1.0
     PREPROCESS:
+      USE_MSR: True
+      MSR:
+        SCALES: [15, 80, 250]
+        GAIN: 1.0
+        OFFSET: 0.0
       DATA_TYPE: ['DiffNormalized', 'Standardized']
       DATA_AUG: ['None']
       LABEL_TYPE: DiffNormalized
@@ -74,15 +84,20 @@ TEST:
   DATA:
     FS: 30
     DATASET: UBFC-rPPG
-    DO_PREPROCESS: False
+    DO_PREPROCESS: True
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Volumes/Intenso/UBFC-rPPG"
-    CACHED_PATH: "./cache/ubfc_test_deepphys"
-    FILE_LIST_PATH: "./data/file_lists/ubfc_test_deepphys"
+    CACHED_PATH: "./cache/ubfc_test_deepphys_msr"
+    FILE_LIST_PATH: "./data/file_lists/ubfc_test_deepphys_msr"
     EXP_DATA_NAME: ""
     BEGIN: 0.0
     END: 1.0
     PREPROCESS:
+      USE_MSR: True
+      MSR:
+        SCALES: [15, 80, 250]
+        GAIN: 1.0
+        OFFSET: 0.0
       DATA_TYPE: ['DiffNormalized', 'Standardized']
       DATA_AUG: ['None']
       LABEL_TYPE: DiffNormalized
